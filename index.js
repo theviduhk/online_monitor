@@ -13,15 +13,22 @@ const METRICS = [
   { path: "offline_pricing", name: "offline pricing" }
 ];
 
+
+// 🔹 Get existing Firebase data
 async function getExistingData() {
   const url = `${FIREBASE_BASE_URL}rthevidu_online.json`;
 
-  const res = await fetch(url);
-  if (!res.ok) return {};
-
-  return await res.json() || {};
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return {};
+    return await res.json() || {};
+  } catch {
+    return {};
+  }
 }
 
+
+// 🔹 Fetch data from Grafana per project
 async function updateProject(project) {
 
   const payload = METRICS.flatMap(m => ([
@@ -43,7 +50,6 @@ async function updateProject(project) {
   }
 
   const json = await response.json();
-
   const projectData = {};
 
   for (const series of json) {
@@ -78,6 +84,8 @@ async function updateProject(project) {
   return projectData;
 }
 
+
+// 🔹 Main logic
 async function main() {
 
   const existingData = await getExistingData();
@@ -97,7 +105,7 @@ async function main() {
 
         let previous = oldMetric.previous || null;
 
-        // 🔥 compare current values
+        // 🔥 Detect change
         if (
           oldMetric.current &&
           newMetric.current &&
@@ -116,14 +124,15 @@ async function main() {
 
       finalData[project] = mergedProjectData;
 
-      console.log(`✅ ${project} done`);
+      console.log(`✅ ${project} updated`);
 
     } catch (err) {
-      console.error(`❌ ${project}`, err.message);
+      console.error(`❌ Error in ${project}:`, err.message);
     }
   }
 
-  const firebaseUrl = `${FIREBASE_BASE_URL}thevidu_online.json`;
+  // 🔹 Push to Firebase (single file)
+  const firebaseUrl = `${FIREBASE_BASE_URL}rthevidu_online.json`;
 
   const fbResponse = await fetch(firebaseUrl, {
     method: 'PUT',
@@ -132,10 +141,29 @@ async function main() {
   });
 
   if (!fbResponse.ok) {
-    throw new Error(`Firebase failed`);
+    throw new Error(`Firebase update failed`);
   }
 
-  console.log("🚀 Firebase updated with previous tracking");
+  console.log("🚀 Firebase updated");
 }
 
-main().catch(console.error);
+
+// 🔥 5 SECOND LOOP
+async function runLoop() {
+  console.log("🚀 Starting loop (every 5 seconds)");
+
+  while (true) {
+    try {
+      await main();
+    } catch (err) {
+      console.error("❌ Loop error:", err.message);
+    }
+
+    console.log("⏳ Waiting 5 seconds...");
+    await new Promise(res => setTimeout(res, 5000));
+  }
+}
+
+
+// 🔹 Start
+runLoop();
