@@ -1,4 +1,3 @@
-
 import fetch from 'node-fetch';
 
 const GRAFANA_URL = 'https://monitor.trax-cloud.com/api/datasources/proxy/29/render';
@@ -32,27 +31,29 @@ const METRICS = [
 ];
 
 async function updateProject(project) {
+
   const payload = METRICS.flatMap(m => ([
-  `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
-  `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
-])).join("&") + "&from=-1h&until=now&format=json";
+    `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
+    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
+  ])).join("&") + "&from=-1h&until=now&format=json";
 
   const response = await fetch(GRAFANA_URL, {
     method: 'POST',
     headers: {
-      'Cookie': grafana_session=${SESSION_ID},
+      'Cookie': `grafana_session=${SESSION_ID}`,
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     body: payload
   });
 
   if (!response.ok) {
-    throw new Error(Grafana request failed for ${project}: ${response.status});
+    throw new Error(`Grafana request failed for ${project}: ${response.status}`);
   }
 
   const json = await response.json();
 
   const batchData = {};
+
   for (const series of json) {
     const validPoints = series.datapoints.filter(dp => dp[0] !== null);
     const last = validPoints.pop();
@@ -67,7 +68,8 @@ async function updateProject(project) {
     };
   }
 
-  const firebaseUrl = ${FIREBASE_BASE_URL}${project}.json;
+  const firebaseUrl = `${FIREBASE_BASE_URL}${project}.json`;
+
   const fbResponse = await fetch(firebaseUrl, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -75,10 +77,10 @@ async function updateProject(project) {
   });
 
   if (!fbResponse.ok) {
-    throw new Error(Firebase update failed for ${project}: ${fbResponse.status});
+    throw new Error(`Firebase update failed for ${project}: ${fbResponse.status}`);
   }
 
-  console.log(✅ Updated: ${project});
+  console.log(`✅ Updated: ${project}`);
 }
 
 async function main() {
@@ -86,7 +88,7 @@ async function main() {
     try {
       await updateProject(project);
     } catch (err) {
-      console.error(❌ Error in ${project}:, err.message);
+      console.error(`❌ Error in ${project}:`, err.message);
     }
   }
   console.log("🚀 DONE");
