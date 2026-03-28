@@ -32,9 +32,10 @@ const METRICS = [
 ];
 
 async function updateProject(project) {
-  const payload = METRICS.map(m =>
-    `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`
-  ).join("&") + "&from=-1h&until=now&format=json";
+  const payload = METRICS.flatMap(m => ([
+  `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
+  `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
+])).join("&") + "&from=-1h&until=now&format=json";
 
   const response = await fetch(GRAFANA_URL, {
     method: 'POST',
