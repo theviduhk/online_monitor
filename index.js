@@ -5,29 +5,14 @@ const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
-  "beiersdorfde", "beiersdorfes", "beiersdorfkz", "beiersdorfpt", "beiersdorfru",
-  "beiersdorfse", "beiersdorftr", "beiersdorfuae", "beiersdorfuk", "cbcil",
-  "danoneuk", "diageoes", "diageotz", "gskuz", "gskgr", "gskhu", "gsklt",
-  "haleonaesa", "haleongb", "haleonse", "marspl", "marssa", "mondelezkaza",
-  "mondelezno", "mdlzrusf", "mondelezsa", "mondelezuz", "pepsicouk",
-  "pernodricardes", "pgbaltics", "pgcz", "pges", "pgespharma", "pghr",
-  "pghu", "pgpl", "pgpt", "pgza", "schwartaude", "ulbe", "ulnl", "ulpt"
+  "pgpl", "diageotz", "beiersdorfde"
 ];
 
 const METRICS = [
   { path: "validation", name: "validation" },
-  { path: "offline_posm", name: "offline posm" },
   { path: "voting", name: "voting" },
   { path: "stitching", name: "stitching" },
-  { path: "Pricing_voting", name: "Pricing voting" },
-  { path: "offline_pricing", name: "offline pricing" },
-  { path: "Offline_Pricing_Voting", name: "Pricing voting" },
-  { path: "scene_recognition", name: "scene recognition" },
-  { path: "category_expert", name: "category expert" },
-  { path: "offline_validation", name: "offline validation" },
-  { path: "pricing_voting", name: "Pricing voting" },
-  { path: "voting_engine", name: "Engine Voting" },
-  { path: "offline_voting", name: "offline voting" }
+  { path: "offline_pricing", name: "offline pricing" }
 ];
 
 async function updateProject(project) {
@@ -47,51 +32,73 @@ async function updateProject(project) {
   });
 
   if (!response.ok) {
-    throw new Error(`Grafana request failed for ${project}: ${response.status}`);
+    throw new Error(`Grafana request failed for ${project}`);
   }
 
   const json = await response.json();
 
-  const batchData = {};
+  const projectData = {};
 
   for (const series of json) {
     const validPoints = series.datapoints.filter(dp => dp[0] !== null);
     const last = validPoints.pop();
     if (!last) continue;
 
+    const value = String(last[0]);
     const timestamp = new Date(last[1] * 1000).toISOString();
-    const metricName = series.target;
 
-    batchData[metricName] = {
-      current: String(last[0]),
-      lastUpdated: timestamp
-    };
+    const isOldest = series.target.includes("Oldest Task");
+
+    const metricName = series.target
+      .replace(" - Total", "")
+      .replace(" - Oldest Task", "");
+
+    if (!projectData[metricName]) {
+      projectData[metricName] = {
+        current: null,
+        oldestTask: null,
+        lastUpdated: timestamp
+      };
+    }
+
+    if (isOldest) {
+      projectData[metricName].oldestTask = value;
+    } else {
+      projectData[metricName].current = value;
+    }
   }
 
-  const firebaseUrl = `${FIREBASE_BASE_URL}${project}.json`;
-
-  const fbResponse = await fetch(firebaseUrl, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(batchData)
-  });
-
-  if (!fbResponse.ok) {
-    throw new Error(`Firebase update failed for ${project}: ${fbResponse.status}`);
-  }
-
-  console.log(`✅ Updated: ${project}`);
+  return projectData;
 }
 
 async function main() {
+
+  const finalData = {};
+
   for (const project of PROJECTS) {
     try {
-      await updateProject(project);
+      const data = await updateProject(project);
+      finalData[project] = data;
+      console.log(`✅ ${project} done`);
     } catch (err) {
-      console.error(`❌ Error in ${project}:`, err.message);
+      console.error(`❌ ${project}`, err.message);
     }
   }
-  console.log("🚀 DONE");
+
+  // 🔥 SINGLE FILE UPDATE
+  const firebaseUrl = `${FIREBASE_BASE_URL}rthevidu_online.json`;
+
+  const fbResponse = await fetch(firebaseUrl, {
+    method: 'PUT', // overwrite whole file
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(finalData)
+  });
+
+  if (!fbResponse.ok) {
+    throw new Error(`Firebase failed`);
+  }
+
+  console.log("🚀 Firebase updated (single file)");
 }
 
 main().catch(console.error);
