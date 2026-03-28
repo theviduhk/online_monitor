@@ -30,7 +30,8 @@ const METRICS = [
   { path: "offline_voting", name: "offline voting" }
 ];
 
-// 🔹 Format seconds to human-readable duration
+
+// 🔹 Convert seconds → human readable
 function formatDuration(seconds) {
   seconds = Number(seconds);
   if (isNaN(seconds)) return null;
@@ -54,9 +55,11 @@ function formatDuration(seconds) {
   return `${weeks}w ${remainingDays}d`;
 }
 
+
 // 🔹 Get existing Firebase data
 async function getExistingData() {
   const url = `${FIREBASE_BASE_URL}queue_monitor.json`;
+
   try {
     const res = await fetch(url);
     if (!res.ok) return {};
@@ -66,12 +69,13 @@ async function getExistingData() {
   }
 }
 
+
 // 🔹 Fetch Grafana data per project
 async function updateProject(project) {
 
   const payload = METRICS.flatMap(m => ([
     `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
-    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - oldestTask')`
+    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
   ])).join("&") + "&from=-1h&until=now&format=json";
 
   const response = await fetch(GRAFANA_URL, {
@@ -107,14 +111,15 @@ async function updateProject(project) {
     if (!projectData[metricName]) {
       projectData[metricName] = {
         current: null,
-        oldestTask: null,
+        duration: null,
+        durationRaw: null,
         lastUpdated: timestamp
       };
     }
 
     if (isOldest) {
-      projectData[metricName].oldestTask = formatDuration(value);
-      projectData[metricName].oldestTaskRaw = value; // optional raw value
+      projectData[metricName].duration = formatDuration(value);
+      projectData[metricName].durationRaw = value;
     } else {
       projectData[metricName].current = value;
     }
@@ -123,8 +128,10 @@ async function updateProject(project) {
   return projectData;
 }
 
+
 // 🔹 Main logic
 async function main() {
+
   const existingData = await getExistingData();
   const finalData = {};
 
@@ -153,14 +160,15 @@ async function main() {
 
         mergedProjectData[metric] = {
           current: newMetric.current,
-          oldestTask: newMetric.oldestTask,
-          oldestTaskRaw: newMetric.oldestTaskRaw,
+          duration: newMetric.duration,
+          durationRaw: newMetric.durationRaw,
           previous: previous,
           lastUpdated: newMetric.lastUpdated
         };
       }
 
       finalData[project] = mergedProjectData;
+
       console.log(`✅ ${project} updated`);
 
     } catch (err) {
@@ -168,8 +176,9 @@ async function main() {
     }
   }
 
-  // 🔹 Push to Firebase (single file)
+  // 🔹 Push to Firebase
   const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
+
   const fbResponse = await fetch(firebaseUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -182,6 +191,7 @@ async function main() {
 
   console.log("🚀 Firebase updated");
 }
+
 
 // 🔹 5 SECOND LOOP
 async function runLoop() {
@@ -198,6 +208,7 @@ async function runLoop() {
     await new Promise(res => setTimeout(res, 5000));
   }
 }
+
 
 // 🔹 Start
 runLoop();
