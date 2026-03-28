@@ -5,7 +5,7 @@ const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
-  "pgpl", "diageotz", "beiersdorfde"
+  "ulbe", "diageotz", "beiersdorfde"
 ];
 
 const METRICS = [
