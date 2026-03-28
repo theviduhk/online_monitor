@@ -4,9 +4,7 @@ const GRAFANA_URL = 'https://monitor.trax-cloud.com/api/datasources/proxy/29/ren
 const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
-const PROJECTS = [
-  "ulbe", "diageotz", "beiersdorfde"
-];
+const PROJECTS = ["ulbe", "diageotz", "beiersdorfde"];
 
 const METRICS = [
   { path: "validation", name: "validation" },
@@ -14,6 +12,15 @@ const METRICS = [
   { path: "stitching", name: "stitching" },
   { path: "offline_pricing", name: "offline pricing" }
 ];
+
+async function getExistingData() {
+  const url = `${FIREBASE_BASE_URL}rthevidu_online.json`;
+
+  const res = await fetch(url);
+  if (!res.ok) return {};
+
+  return await res.json() || {};
+}
 
 async function updateProject(project) {
 
@@ -73,23 +80,53 @@ async function updateProject(project) {
 
 async function main() {
 
+  const existingData = await getExistingData();
   const finalData = {};
 
   for (const project of PROJECTS) {
     try {
-      const data = await updateProject(project);
-      finalData[project] = data;
+      const newData = await updateProject(project);
+      const oldProjectData = existingData?.[project] || {};
+
+      const mergedProjectData = {};
+
+      for (const metric in newData) {
+
+        const newMetric = newData[metric];
+        const oldMetric = oldProjectData?.[metric] || {};
+
+        let previous = oldMetric.previous || null;
+
+        // 🔥 compare current values
+        if (
+          oldMetric.current &&
+          newMetric.current &&
+          oldMetric.current !== newMetric.current
+        ) {
+          previous = oldMetric.current;
+        }
+
+        mergedProjectData[metric] = {
+          current: newMetric.current,
+          oldestTask: newMetric.oldestTask,
+          previous: previous,
+          lastUpdated: newMetric.lastUpdated
+        };
+      }
+
+      finalData[project] = mergedProjectData;
+
       console.log(`✅ ${project} done`);
+
     } catch (err) {
       console.error(`❌ ${project}`, err.message);
     }
   }
 
-  // 🔥 SINGLE FILE UPDATE
-  const firebaseUrl = `${FIREBASE_BASE_URL}rthevidu_online.json`;
+  const firebaseUrl = `${FIREBASE_BASE_URL}thevidu_online.json`;
 
   const fbResponse = await fetch(firebaseUrl, {
-    method: 'PUT', // overwrite whole file
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(finalData)
   });
@@ -98,7 +135,7 @@ async function main() {
     throw new Error(`Firebase failed`);
   }
 
-  console.log("🚀 Firebase updated (single file)");
+  console.log("🚀 Firebase updated with previous tracking");
 }
 
 main().catch(console.error);
