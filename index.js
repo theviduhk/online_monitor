@@ -33,7 +33,7 @@ const METRICS = [
 
 async function updateProject(project) {
   const payload = METRICS.map(m =>
-    target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name}')
+    `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`
   ).join("&") + "&from=-1h&until=now&format=json";
 
   const response = await fetch(GRAFANA_URL, {
