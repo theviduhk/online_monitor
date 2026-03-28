@@ -13,11 +13,33 @@ const METRICS = [
   { path: "offline_pricing", name: "offline pricing" }
 ];
 
+// 🔹 Format seconds to human-readable duration
+function formatDuration(seconds) {
+  seconds = Number(seconds);
+  if (isNaN(seconds)) return null;
+
+  if (seconds < 60) return `${seconds}s`;
+
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (minutes < 60) return `${minutes}m ${secs}s`;
+
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours < 24) return `${hours}h ${mins}m`;
+
+  const days = Math.floor(hours / 24);
+  const hrs = hours % 24;
+  if (days < 7) return `${days}d ${hrs}h`;
+
+  const weeks = Math.floor(days / 7);
+  const remainingDays = days % 7;
+  return `${weeks}w ${remainingDays}d`;
+}
 
 // 🔹 Get existing Firebase data
 async function getExistingData() {
   const url = `${FIREBASE_BASE_URL}rthevidu_online.json`;
-
   try {
     const res = await fetch(url);
     if (!res.ok) return {};
@@ -27,8 +49,7 @@ async function getExistingData() {
   }
 }
 
-
-// 🔹 Fetch data from Grafana per project
+// 🔹 Fetch Grafana data per project
 async function updateProject(project) {
 
   const payload = METRICS.flatMap(m => ([
@@ -75,7 +96,8 @@ async function updateProject(project) {
     }
 
     if (isOldest) {
-      projectData[metricName].oldestTask = value;
+      projectData[metricName].oldestTask = formatDuration(value);
+      projectData[metricName].oldestTaskRaw = value; // optional raw value
     } else {
       projectData[metricName].current = value;
     }
@@ -84,10 +106,8 @@ async function updateProject(project) {
   return projectData;
 }
 
-
 // 🔹 Main logic
 async function main() {
-
   const existingData = await getExistingData();
   const finalData = {};
 
@@ -117,13 +137,13 @@ async function main() {
         mergedProjectData[metric] = {
           current: newMetric.current,
           oldestTask: newMetric.oldestTask,
+          oldestTaskRaw: newMetric.oldestTaskRaw,
           previous: previous,
           lastUpdated: newMetric.lastUpdated
         };
       }
 
       finalData[project] = mergedProjectData;
-
       console.log(`✅ ${project} updated`);
 
     } catch (err) {
@@ -132,8 +152,7 @@ async function main() {
   }
 
   // 🔹 Push to Firebase (single file)
-  const firebaseUrl = `${FIREBASE_BASE_URL}rthevidu_online.json`;
-
+  const firebaseUrl = `${FIREBASE_BASE_URL}thevidu_online.json`;
   const fbResponse = await fetch(firebaseUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -147,8 +166,7 @@ async function main() {
   console.log("🚀 Firebase updated");
 }
 
-
-// 🔥 5 SECOND LOOP
+// 🔹 5 SECOND LOOP
 async function runLoop() {
   console.log("🚀 Starting loop (every 5 seconds)");
 
@@ -163,7 +181,6 @@ async function runLoop() {
     await new Promise(res => setTimeout(res, 5000));
   }
 }
-
 
 // 🔹 Start
 runLoop();
