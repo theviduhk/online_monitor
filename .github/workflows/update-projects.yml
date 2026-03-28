@@ -2,30 +2,31 @@ name: Update Projects Data
 
 on:
   push:
-    branches: [ main ]           # runs when you push to main branch
+    branches: [ main ]
   schedule:
-    - cron: '*/15 * * * *'       # runs automatically every 15 minutes
-  workflow_dispatch:             # allows manual trigger from GitHub UI
+    - cron: '* * * * *'   # every 1 minute (GitHub max)
+  workflow_dispatch:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # force actions to use Node 24
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'                 # your script will run on Node 24
+          node-version: '24'
 
       - name: Install dependencies
         run: npm install node-fetch
 
-      - name: Run script
+      - name: Run script (5 sec loop inside)
         run: node index.js
         env:
           GRAFANA_SESSION: ${{ secrets.GRAFANA_SESSION }}
