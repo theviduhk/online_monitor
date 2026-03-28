@@ -56,7 +56,7 @@ function formatDuration(seconds) {
 
 // 🔹 Get existing Firebase data
 async function getExistingData() {
-  const url = `${FIREBASE_BASE_URL}rthevidu_online.json`;
+  const url = `${FIREBASE_BASE_URL}queue_monitor.json`;
   try {
     const res = await fetch(url);
     if (!res.ok) return {};
@@ -71,7 +71,7 @@ async function updateProject(project) {
 
   const payload = METRICS.flatMap(m => ([
     `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
-    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
+    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Duration')`
   ])).join("&") + "&from=-1h&until=now&format=json";
 
   const response = await fetch(GRAFANA_URL, {
@@ -169,7 +169,7 @@ async function main() {
   }
 
   // 🔹 Push to Firebase (single file)
-  const firebaseUrl = `${FIREBASE_BASE_URL}thevidu_online.json`;
+  const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
   const fbResponse = await fetch(firebaseUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
