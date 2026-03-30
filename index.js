@@ -12,9 +12,9 @@ const PROJECTS = [
   "mondelezno","mdlzrusf","mondelezsa","mondelezuz","pepsicouk",
   "pernodricardes","pgbaltics","pgcz","pges","pgespharma","pghr",
   "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","ulpt",
-  "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom","marsqa",
-  "marsuae","risparkwinede","straussdryil","straussil","straussfritolayil",
-  "tevade","tevapl","tevaru"
+  "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom",
+  "marsqa","marsuae","risparkwinede","straussdryil","straussil",
+  "straussfritolayil","tevade","tevapl","tevaru"
 ];
 
 const METRICS = [
@@ -132,7 +132,7 @@ async function updateProject(project) {
 }
 
 
-// 🔹 Main logic (ONLY CHANGED PROJECTS)
+// 🔹 Main logic (ONLY CHANGES)
 async function main() {
 
   const existingData = await getExistingData();
@@ -144,8 +144,7 @@ async function main() {
       const oldProjectData = existingData?.[project] || {};
 
       const mergedProjectData = {};
-
-      let hasChange = false;
+      let hasChanges = false;
 
       for (const metric in newData) {
 
@@ -161,7 +160,7 @@ async function main() {
           oldMetric.current !== newMetric.current
         ) {
           previous = oldMetric.current;
-          hasChange = true;
+          hasChanges = true;
         }
 
         mergedProjectData[metric] = {
@@ -173,8 +172,8 @@ async function main() {
         };
       }
 
-      // ✅ Only add if changed
-      if (hasChange || !existingData[project]) {
+      // ✅ Only push if changed
+      if (hasChanges || !existingData?.[project]) {
         updates[project] = mergedProjectData;
         console.log(`🔄 ${project} updated`);
       } else {
@@ -188,6 +187,7 @@ async function main() {
 
   // 🔹 Push ONLY updates
   if (Object.keys(updates).length > 0) {
+
     const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
 
     const fbResponse = await fetch(firebaseUrl, {
