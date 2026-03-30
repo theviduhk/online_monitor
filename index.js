@@ -132,7 +132,7 @@ async function updateProject(project) {
 }
 
 
-// 🔹 Main logic (ONLY CHANGES)
+// 🔹 Main logic
 async function main() {
 
   const existingData = await getExistingData();
@@ -180,6 +180,9 @@ async function main() {
         console.log(`⏭️ ${project} no change`);
       }
 
+      // 🔥 small delay to reduce API load
+      await new Promise(res => setTimeout(res, 100));
+
     } catch (err) {
       console.error(`❌ Error in ${project}:`, err.message);
     }
@@ -207,9 +210,9 @@ async function main() {
 }
 
 
-// 🔹 5 SECOND LOOP
+// 🔹 1 SECOND LOOP
 async function runLoop() {
-  console.log("🚀 Starting loop (every 5 seconds)");
+  console.log("🚀 Starting loop (every 1 second)");
 
   while (true) {
     try {
@@ -218,8 +221,8 @@ async function runLoop() {
       console.error("❌ Loop error:", err.message);
     }
 
-    console.log("⏳ Waiting 5 seconds...");
-    await new Promise(res => setTimeout(res, 5000));
+    console.log("⏳ Waiting 1 second...");
+    await new Promise(res => setTimeout(res, 1000));
   }
 }
 
