@@ -5,15 +5,16 @@ const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
-  "beiersdorfde", "beiersdorfes", "beiersdorfkz", "beiersdorfpt", "beiersdorfru",
-  "beiersdorfse", "beiersdorftr", "beiersdorfuae", "beiersdorfuk", "cbcil",
-  "danoneuk", "diageoes", "diageotz", "gskuz", "gskgr", "gskhu", "gsklt",
-  "haleonaesa", "haleongb", "haleonse", "marspl", "marssa", "mondelezkaza",
-  "mondelezno", "mdlzrusf", "mondelezsa", "mondelezuz", "pepsicouk",
-  "pernodricardes", "pgbaltics", "pgcz", "pges", "pgespharma", "pghr",
-  "pghu", "pgpl", "pgpt", "pgza", "schwartaude", "ulbe", "ulnl", "ulpt","cbcdairyil","inbevci","inbevnl","marsbh",
-  "marskw" , "marsom" , "marsqa" , "marsuae" , "risparkwinede" , "straussdryil" , "straussil" , "straussfritolayil",
-  "tevade" , "tevapl" , "tevaru" ,
+  "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru",
+  "beiersdorfse","beiersdorftr","beiersdorfuae","beiersdorfuk","cbcil",
+  "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt",
+  "haleonaesa","haleongb","haleonse","marspl","marssa","mondelezkaza",
+  "mondelezno","mdlzrusf","mondelezsa","mondelezuz","pepsicouk",
+  "pernodricardes","pgbaltics","pgcz","pges","pgespharma","pghr",
+  "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","ulpt",
+  "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom","marsqa",
+  "marsuae","risparkwinede","straussdryil","straussil","straussfritolayil",
+  "tevade","tevapl","tevaru"
 ];
 
 const METRICS = [
@@ -131,11 +132,11 @@ async function updateProject(project) {
 }
 
 
-// 🔹 Main logic
+// 🔹 Main logic (ONLY CHANGED PROJECTS)
 async function main() {
 
   const existingData = await getExistingData();
-  const finalData = {};
+  const updates = {};
 
   for (const project of PROJECTS) {
     try {
@@ -143,6 +144,8 @@ async function main() {
       const oldProjectData = existingData?.[project] || {};
 
       const mergedProjectData = {};
+
+      let hasChange = false;
 
       for (const metric in newData) {
 
@@ -158,6 +161,7 @@ async function main() {
           oldMetric.current !== newMetric.current
         ) {
           previous = oldMetric.current;
+          hasChange = true;
         }
 
         mergedProjectData[metric] = {
@@ -169,29 +173,37 @@ async function main() {
         };
       }
 
-      finalData[project] = mergedProjectData;
-
-      console.log(`✅ ${project} updated`);
+      // ✅ Only add if changed
+      if (hasChange || !existingData[project]) {
+        updates[project] = mergedProjectData;
+        console.log(`🔄 ${project} updated`);
+      } else {
+        console.log(`⏭️ ${project} no change`);
+      }
 
     } catch (err) {
       console.error(`❌ Error in ${project}:`, err.message);
     }
   }
 
-  // 🔹 Push to Firebase
-  const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
+  // 🔹 Push ONLY updates
+  if (Object.keys(updates).length > 0) {
+    const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
 
-  const fbResponse = await fetch(firebaseUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(finalData)
-  });
+    const fbResponse = await fetch(firebaseUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
 
-  if (!fbResponse.ok) {
-    throw new Error(`Firebase update failed`);
+    if (!fbResponse.ok) {
+      throw new Error(`Firebase update failed`);
+    }
+
+    console.log("🚀 Firebase updated (only changes)");
+  } else {
+    console.log("✅ No changes detected");
   }
-
-  console.log("🚀 Firebase updated");
 }
 
 
