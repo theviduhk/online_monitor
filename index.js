@@ -11,7 +11,9 @@ const PROJECTS = [
   "haleonaesa", "haleongb", "haleonse", "marspl", "marssa", "mondelezkaza",
   "mondelezno", "mdlzrusf", "mondelezsa", "mondelezuz", "pepsicouk",
   "pernodricardes", "pgbaltics", "pgcz", "pges", "pgespharma", "pghr",
-  "pghu", "pgpl", "pgpt", "pgza", "schwartaude", "ulbe", "ulnl", "ulpt"
+  "pghu", "pgpl", "pgpt", "pgza", "schwartaude", "ulbe", "ulnl", "ulpt","cbcdairyil","inbevci","inbevnl","marsbh",
+  "marskw" , "marsom" , "marsqa" , "marsuae" , "risparkwinede" , "straussdryil" , "straussil" , "straussfritolayil",
+  "tevade" , "tevapl" , "tevaru" ,
 ];
 
 const METRICS = [
