@@ -14,7 +14,7 @@ const PROJECTS = [
   "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","ulpt",
   "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom",
   "marsqa","marsuae","risparkwinede","straussdryil","straussil",
-  "straussfritolayil","tevade","tevapl","tevaru"
+  "straussfritolayil","tevade","tevapl","pngza2","tevaru"
 ];
 
 const METRICS = [
