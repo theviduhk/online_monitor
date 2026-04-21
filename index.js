@@ -1,8 +1,14 @@
-import fetch from 'node-fetch';
+import fetch from "node-fetch";
 
-const GRAFANA_URL = 'https://monitor-public.trax-cloud.com/api/datasources/proxy/29/render';
+const GRAFANA_URL =
+  "https://monitor-public.trax-cloud.com/api/datasources/proxy/29/render";
+
 const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
+
+// 🔥 Reduce load (IMPORTANT)
+const LOOP_DELAY = 10000; // 10 seconds
+const CONCURRENT_LIMIT = 5; // parallel requests
 
 const PROJECTS = [
   "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru",
@@ -17,24 +23,22 @@ const PROJECTS = [
   "straussfritolayil","tevade","tevapl","bdftr","pngza2","beiersdorfsp","dlcpt","tevaru"
 ];
 
+// 🔥 Cleaned metrics (removed duplicates)
 const METRICS = [
   { path: "validation", name: "validation" },
   { path: "offline_posm", name: "offline posm" },
   { path: "voting", name: "voting" },
   { path: "stitching", name: "stitching" },
-  { path: "Pricing_voting", name: "Pricing voting" },
+  { path: "pricing_voting", name: "pricing voting" },
   { path: "offline_pricing", name: "offline pricing" },
-  { path: "Offline_Pricing_Voting", name: "Pricing voting" },
   { path: "scene_recognition", name: "scene recognition" },
   { path: "category_expert", name: "category expert" },
   { path: "offline_validation", name: "offline validation" },
-  { path: "pricing_voting", name: "Pricing voting" },
-  { path: "voting_engine", name: "Engine Voting" },
+  { path: "voting_engine", name: "engine voting" },
   { path: "offline_voting", name: "offline voting" }
 ];
 
-
-// 🔹 Convert seconds → human readable
+// 🔹 Format duration
 function formatDuration(seconds) {
   seconds = Number(seconds);
   if (isNaN(seconds)) return null;
@@ -42,190 +46,176 @@ function formatDuration(seconds) {
   if (seconds < 60) return `${seconds}s`;
 
   const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (minutes < 60) return `${minutes}m ${secs}s`;
+  if (minutes < 60) return `${minutes}m`;
 
   const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours < 24) return `${hours}h ${mins}m`;
+  if (hours < 24) return `${hours}h`;
 
   const days = Math.floor(hours / 24);
-  const hrs = hours % 24;
-  if (days < 7) return `${days}d ${hrs}h`;
-
-  const weeks = Math.floor(days / 7);
-  const remainingDays = days % 7;
-  return `${weeks}w ${remainingDays}d`;
+  return `${days}d`;
 }
 
-
-// 🔹 Get existing Firebase data
+// 🔹 Firebase existing data
 async function getExistingData() {
-  const url = `${FIREBASE_BASE_URL}queue_monitor.json`;
-
   try {
-    const res = await fetch(url);
-    if (!res.ok) return {};
-    return await res.json() || {};
+    const res = await fetch(`${FIREBASE_BASE_URL}queue_monitor.json`);
+    return res.ok ? (await res.json()) || {} : {};
   } catch {
     return {};
   }
 }
 
-
-// 🔹 Fetch Grafana data per project
+// 🔹 Fetch one project
 async function updateProject(project) {
+  const payload =
+    METRICS.flatMap((m) => [
+      `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
+      `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
+    ]).join("&") + "&from=-5m&until=now&format=json";
 
-  const payload = METRICS.flatMap(m => ([
-    `target=alias(prod.gauges.selector.queue.${m.path}.${project}.total,'${m.name} - Total')`,
-    `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
-  ])).join("&") + "&from=-1h&until=now&format=json";
-
-  const response = await fetch(GRAFANA_URL, {
-    method: 'POST',
+  const res = await fetch(GRAFANA_URL, {
+    method: "POST",
     headers: {
-      'Cookie': `grafana_session=${SESSION_ID}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
+      Cookie: `grafana_session=${SESSION_ID}`,
+      "Content-Type": "application/x-www-form-urlencoded"
     },
     body: payload
   });
 
-  if (!response.ok) {
-    throw new Error(`Grafana request failed for ${project}`);
-  }
+  if (!res.ok) throw new Error(`Grafana failed (${project})`);
 
-  const json = await response.json();
-  const projectData = {};
+  const json = await res.json();
+  const data = {};
 
   for (const series of json) {
-    const validPoints = series.datapoints.filter(dp => dp[0] !== null);
-    const last = validPoints.pop();
-    if (!last) continue;
+    const valid = series.datapoints.filter((d) => d[0] !== null);
+    if (!valid.length) continue;
 
-    const value = String(last[0]);
-    const timestamp = new Date(last[1] * 1000).toISOString();
+    const [value, ts] = valid.pop();
 
     const isOldest = series.target.includes("Oldest Task");
 
-    const metricName = series.target
+    const name = series.target
       .replace(" - Total", "")
       .replace(" - Oldest Task", "");
 
-    if (!projectData[metricName]) {
-      projectData[metricName] = {
+    if (!data[name]) {
+      data[name] = {
         current: null,
         duration: null,
         durationRaw: null,
-        lastUpdated: timestamp
+        lastUpdated: new Date(ts * 1000).toISOString()
       };
     }
 
     if (isOldest) {
-      projectData[metricName].duration = formatDuration(value);
-      projectData[metricName].durationRaw = value;
+      data[name].duration = formatDuration(value);
+      data[name].durationRaw = value;
     } else {
-      projectData[metricName].current = value;
+      data[name].current = value;
     }
   }
 
-  return projectData;
+  return data;
 }
 
+// 🔹 Parallel runner with limit
+async function runWithLimit(items, limit, handler) {
+  const results = [];
+  const executing = [];
 
-// 🔹 Main logic
-async function main() {
+  for (const item of items) {
+    const p = Promise.resolve().then(() => handler(item));
+    results.push(p);
 
-  const existingData = await getExistingData();
-  const updates = {};
+    if (limit <= items.length) {
+      const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
 
-  for (const project of PROJECTS) {
-    try {
-      const newData = await updateProject(project);
-      const oldProjectData = existingData?.[project] || {};
-
-      const mergedProjectData = {};
-      let hasChanges = false;
-
-      for (const metric in newData) {
-
-        const newMetric = newData[metric];
-        const oldMetric = oldProjectData?.[metric] || {};
-
-        let previous = oldMetric.previous || null;
-
-        // 🔥 Detect change
-        if (
-          oldMetric.current &&
-          newMetric.current &&
-          oldMetric.current !== newMetric.current
-        ) {
-          previous = oldMetric.current;
-          hasChanges = true;
-        }
-
-        mergedProjectData[metric] = {
-          current: newMetric.current,
-          duration: newMetric.duration,
-          durationRaw: newMetric.durationRaw,
-          previous: previous,
-          lastUpdated: newMetric.lastUpdated
-        };
+      if (executing.length >= limit) {
+        await Promise.race(executing);
       }
-
-      // ✅ Only push if changed
-      if (hasChanges || !existingData?.[project]) {
-        updates[project] = mergedProjectData;
-        console.log(`🔄 ${project} updated`);
-      } else {
-        console.log(`⏭️ ${project} no change`);
-      }
-
-      // 🔥 small delay to reduce API load
-      await new Promise(res => setTimeout(res, 100));
-
-    } catch (err) {
-      console.error(`❌ Error in ${project}:`, err.message);
     }
   }
 
-  // 🔹 Push ONLY updates
-  if (Object.keys(updates).length > 0) {
+  return Promise.allSettled(results);
+}
 
-    const firebaseUrl = `${FIREBASE_BASE_URL}queue_monitor.json`;
+// 🔹 Main
+async function main() {
+  const existing = await getExistingData();
+  const updates = {};
 
-    const fbResponse = await fetch(firebaseUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+  const results = await runWithLimit(
+    PROJECTS,
+    CONCURRENT_LIMIT,
+    async (project) => {
+      try {
+        const newData = await updateProject(project);
+        const oldData = existing[project] || {};
+
+        let changed = false;
+        const merged = {};
+
+        for (const metric in newData) {
+          const newM = newData[metric];
+          const oldM = oldData[metric] || {};
+
+          let previous = oldM.previous || null;
+
+          if (
+            oldM.current &&
+            newM.current &&
+            oldM.current !== newM.current
+          ) {
+            previous = oldM.current;
+            changed = true;
+          }
+
+          merged[metric] = {
+            ...newM,
+            previous
+          };
+        }
+
+        if (changed || !existing[project]) {
+          updates[project] = merged;
+          console.log(`🔄 ${project}`);
+        }
+      } catch (err) {
+        console.error(`❌ ${project}:`, err.message);
+      }
+    }
+  );
+
+  if (Object.keys(updates).length) {
+    const res = await fetch(`${FIREBASE_BASE_URL}queue_monitor.json`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates)
     });
 
-    if (!fbResponse.ok) {
-      throw new Error(`Firebase update failed`);
-    }
+    if (!res.ok) throw new Error("Firebase update failed");
 
-    console.log("🚀 Firebase updated (only changes)");
+    console.log("🚀 Firebase updated");
   } else {
-    console.log("✅ No changes detected");
+    console.log("✅ No changes");
   }
 }
 
-
-// 🔹 1 SECOND LOOP
+// 🔹 Loop
 async function runLoop() {
-  console.log("🚀 Starting loop (every 1 second)");
+  console.log("🚀 Loop started");
 
   while (true) {
     try {
       await main();
     } catch (err) {
-      console.error("❌ Loop error:", err.message);
+      console.error("❌ Loop:", err.message);
     }
 
-    console.log("⏳ Waiting 1 second...");
-    await new Promise(res => setTimeout(res, 1000));
+    await new Promise((r) => setTimeout(r, LOOP_DELAY));
   }
 }
 
-
-// 🔹 Start
 runLoop();
