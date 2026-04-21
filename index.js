@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const GRAFANA_URL = 'https://monitor.trax-cloud.com/api/datasources/proxy/29/render';
+const GRAFANA_URL = 'https://monitor-public.trax-cloud.com/api/datasources/proxy/29/render';
 const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
