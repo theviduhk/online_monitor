@@ -10,8 +10,8 @@ const PROJECTS = [
   "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt",
   "haleonaesa","haleongb","haleonse","marspl","marssa","mondelezkaza",
   "mondelezno","mdlzrusf","mondelezsa","mondelezuz","dlcpt","pepsicouk",
-  "pernodricardes","pgbaltics","pgcz","pges","pgespharma","pghr",
-  "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","ulpt",
+  "pernodricardes","pgbaltics2","pgcz","pges","pgespharma","pghr",
+  "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","pgcroatia","ulpt",
   "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom",
   "marsqa","marsuae","risparkwinede","straussdryil","straussil",
   "straussfritolayil","tevade","tevapl","bdftr","pngza2","beiersdorfsp","tevaru"
