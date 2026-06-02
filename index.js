@@ -7,7 +7,7 @@ const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 const PROJECTS = [
   "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru",
   "beiersdorfse","beiersdorftr","beiersdorfuae","beiersdorfuk","cbcil",
-  "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt",
+  "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt","beiersdorfke",
   "haleonaesa","haleongb","haleonse","marspl","marssa","mondelezkaza",
   "mondelezno","mdlzrusf","mondelezsa","mondelezuz","dlcpt","pepsicouk",
   "pernodricardes","pgbaltics2","pgcz","pges","pgespharma","pghr",
