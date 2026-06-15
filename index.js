@@ -12,7 +12,7 @@ const PROJECTS = [
   "mondelezno","mdlzrusf","mondelezsa","mondelezuz","dlcpt","pepsicouk",
   "pernodricardes","pgbaltics2","pgcz","pges","pgespharma","pghr",
   "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","pgcroatia","ulpt",
-  "cbcdairyil","inbevci","inbevnl","marsbh","marskw","marsom",
+  "cbcdairyil","inbevci","inbevnl","diageofr","marsbh","marskw","marsom",
   "marsqa","marsuae","risparkwinede","straussdryil","straussil",
   "straussfritolayil","tevade","tevapl","bdftr","pngza2","beiersdorfsp","tevaru"
 ];
