@@ -1,33 +1,29 @@
-name: Update Projects Data
+name: Queue Monitor
 
 on:
-  push:
-    branches: [ main ]
   schedule:
-    - cron: '* * * * *'   # every 1 minute (GitHub max)
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    - cron: '* * * * *'  # every 1 minute (GitHub minimum)
+  workflow_dispatch:       # manual run option
 
 jobs:
-  update:
+  monitor:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '24'
+          node-version: '18'
 
       - name: Install dependencies
-        run: npm install node-fetch
+        run: npm install
 
-      - name: Run script (5 sec loop inside)
-        run: node index.js
+      - name: Run monitor
         env:
-          GRAFANA_SESSION: ${{ secrets.GRAFANA_SESSION }}
+          GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
+          GRAFANA_PASS: ${{ secrets.GRAFANA_PASS }}
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+        run: node index.js
