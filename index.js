@@ -1,7 +1,7 @@
+import 'dotenv/config';
 import fetch from 'node-fetch';
 
 const GRAFANA_URL = 'https://monitor-public.trax-cloud.com/api/datasources/proxy/29/render';
-const SESSION_ID = process.env.GRAFANA_SESSION;
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
@@ -59,6 +59,73 @@ function formatDuration(seconds) {
 }
 
 
+// 🔹 Auto login & get session
+async function getSession() {
+  console.log('🔐 Logging in to Grafana...');
+
+  const response = await fetch('https://monitor-public.trax-cloud.com/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user: process.env.GRAFANA_USER,
+      password: process.env.GRAFANA_PASS
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Login failed: ${response.status}`);
+  }
+
+  const cookies = response.headers.get('set-cookie');
+  const match = cookies?.match(/grafana_session=([^;]+)/);
+
+  if (!match) throw new Error('Login failed - session not found in cookies');
+
+  console.log('✅ New session created');
+  return match[1];
+}
+
+
+// 🔹 Session state
+let SESSION_ID = null;
+
+
+// 🔹 Grafana fetch with auto session refresh
+async function grafanaFetch(payload) {
+  if (!SESSION_ID) SESSION_ID = await getSession();
+
+  let response = await fetch(GRAFANA_URL, {
+    method: 'POST',
+    headers: {
+      'Cookie': `grafana_session=${SESSION_ID}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: payload
+  });
+
+  // 🔄 Session expired → refresh & retry
+  if (response.status === 401) {
+    console.log('🔄 Session expired, re-logging in...');
+    SESSION_ID = await getSession();
+
+    response = await fetch(GRAFANA_URL, {
+      method: 'POST',
+      headers: {
+        'Cookie': `grafana_session=${SESSION_ID}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: payload
+    });
+  }
+
+  if (!response.ok) {
+    throw new Error(`Grafana request failed: ${response.status}`);
+  }
+
+  return response;
+}
+
+
 // 🔹 Get existing Firebase data
 async function getExistingData() {
   const url = `${FIREBASE_BASE_URL}queue_monitor.json`;
@@ -81,19 +148,7 @@ async function updateProject(project) {
     `target=alias(aliasByNode(prod.gauges.selector.queue.${m.path}.${project}.oldestTask,4),'${m.name} - Oldest Task')`
   ])).join("&") + "&from=-1h&until=now&format=json";
 
-  const response = await fetch(GRAFANA_URL, {
-    method: 'POST',
-    headers: {
-      'Cookie': `grafana_session=${SESSION_ID}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: payload
-  });
-
-  if (!response.ok) {
-    throw new Error(`Grafana request failed for ${project}`);
-  }
-
+  const response = await grafanaFetch(payload);
   const json = await response.json();
   const projectData = {};
 
