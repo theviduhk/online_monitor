@@ -5,8 +5,8 @@ const GRAFANA_URL = 'https://monitor-public.trax-cloud.com/api/datasources/proxy
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
-  "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru",
-  "beiersdorfse","beiersdorftr","beiersdorfuae","beiersdorfuk","cbcil",
+  "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru","beiersdorfgr",
+  "beiersdorfse","beiersdorftr","beiersdorfuae","beiersdorfuk","cbcil","mondelezaz",
   "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt","beiersdorfke",
   "haleonaesa","haleongb","haleonse","marspl","marssa","mondelezkaza",
   "mondelezno","mdlzrusf","mondelezsa","mondelezuz","dlcpt","pepsicouk",
