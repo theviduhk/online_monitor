@@ -1,33 +1,23 @@
 name: Queue Monitor
 on:
   schedule:
-    - cron: '*/5 * * * *'   # every 5 minutes — safer than every 1 min
-  workflow_dispatch:         # manual run option
-
-concurrency:
-  group: queue-monitor
-  cancel-in-progress: false   # don't kill an in-flight run; just skip overlap
-
+    - cron: '* * * * *'  # every 1 minute (GitHub minimum)
+  workflow_dispatch:       # manual run option
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 3        # hard stop so a stuck run can't block future ones
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v3
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
-
+          node-version: '18'
       - name: Install dependencies
         run: npm install
-
       - name: Run monitor
         env:
           GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
           GRAFANA_PASS: ${{ secrets.GRAFANA_PASS }}
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
-        run: node queue-monitor.mjs
+        run: node index.js
