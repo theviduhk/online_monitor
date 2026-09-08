@@ -5,17 +5,25 @@ const GRAFANA_URL = 'https://monitor-public.trax-cloud.com/api/datasources/proxy
 const FIREBASE_BASE_URL = process.env.FIREBASE_URL;
 
 const PROJECTS = [
-  "beiersdorfde","beiersdorfes","beiersdorfkz","beiersdorfpt","beiersdorfru","beiersdorfgr",
-  "beiersdorfse","beiersdorftr","beiersdorfuae","beiersdorfuk","cbcil","mondelezaz",
-  "danoneuk","diageoes","diageotz","gskuz","gskgr","gskhu","gsklt","beiersdorfke",
-  "haleonaesa","haleongb","haleonse","marspl","marssa","mondelezkaza",
-  "mondelezno","mdlzrusf","mondelezsa","mondelezuz","dlcpt","pepsicouk",
-  "pernodricardes","pgbaltics2","pgcz","pges","pgespharma","pghr",
-  "pghu","pgpl","pgpt","pgza","schwartaude","ulbe","ulnl","pgcroatia","ulpt",
-  "cbcdairyil","inbevci","inbevnl","diageofr","marsbh","marskw","marsom","haleonil",
-  "marsqa","marsuae","risparkwinede","straussdryil","straussil","jtihr",
-  "straussfritolayil","tevade","tevapl","bdftr","pngza2","beiersdorfsp","tevaru",
-  "gskua","kraftheinzde","beiersdorfza","fapharmafr"
+  "aneuae","beiersdorfbe","beiersdorfcz","beiersdorfde","beiersdorfeg","beiersdorfsp",
+  "beiersdorffr","beiersdorfgh","beiersdorfgr","beiersdorfit","beiersdorfke","beiersdorfkz",
+  "beiersdorfng","beiersdorfpl","beiersdorfpt","beiersdorfro","beiersdorfru","beiersdorfsa",
+  "beiersdorfse","bdftr","beiersdorfua","beiersdorfuae","beiersdorfuk","beiersdorfza",
+  "cbcil","cbcdairyil","ccza","danoneuk","dlcpt","diageobenelux","diageoes","diageofr",
+  "diageoga","diageogr","diageogtr","diageoie","diageoit","diageoke","diageopl","diageopt",
+  "diageoromania","diageotz","diageoug","diageouk","diageoza","fapharmabe","fapharmafr",
+  "fazerfi","gskuz","gskbg","gskch","gskcz","gskde","gskes","gskesph","gskfi","gskgr",
+  "gskhu","gskkz","gsklt","gskpl","gskro","gsksk","gskua","gskza","haleonaesa","haleongb",
+  "haleonil","haleonse","inbevci","inbevnl","jdees","jdetr","jdeza","jtihr","jtisl","jtiro",
+  "kraftheinzde","marsbh","marsegy","marskw","marsom","marspl","marsqa","marssa","marsuae",
+  "marsuk","mondelezaz","mondelezde","mondelezfi1","mondelezge","mondelezkz","mondelezno",
+  "mondelezprt","mdlzrusf","mondelezse","mondeleztr","mondelezsa","mondelezuz","mondelezza",
+  "odulnl","pernodricardes","pepside","pepsicoes","pepsicofr","pepsicopl","pepsicouk",
+  "pgbaltics2","pgcz","pges","pgespharma","pgcroatia","pghu","pgpl","pgpt","pgsk","pgua",
+  "pngza2","refriangoao","risparkwinede","schwartautkde","straussil","straussdryil",
+  "straussfritolayil","tevade","tevapl","tevaru","tnuvailv2","tuborgro","ulbe","ulde","ules",
+  "unilevergr","ulit","unileverken","ulnl","ulpl","ulpt","unileverse","uluk",
+  "beiersdorfes","beiersdorftr","mondelezkaza","pghr","pgza","schwartaude"
 ];
 
 const METRICS = [
