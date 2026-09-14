@@ -22,8 +22,9 @@ const PROJECTS = [
   "pgbaltics2","pgcz","pges","pgespharma","pgcroatia","pghu","pgpl","pgpt","pgsk","pgua",
   "pngza2","refriangoao","risparkwinede","schwartautkde","straussil","straussdryil",
   "straussfritolayil","tevade","tevapl","tevaru","tnuvailv2","tuborgro","ulbe","ulde","ules",
-  "unilevergr","ulit","unileverken","ulnl","ulpl","ulpt","unileverse","uluk",
-  "beiersdorfes","beiersdorftr","mondelezkaza","pghr","pgza","schwartaude"
+  "unilevergr","ulit","unileverken","ulnl","ulpl","ulpt","unileverse","uluk","haleonfr",
+  "beiersdorfes","beiersdorftr","mondelezkaza","pghr","pgza","schwartaude","florafoodsgr",
+  "odpernodricardza","odpernodricardtr"
 ];
 
 const METRICS = [
