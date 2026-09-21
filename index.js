@@ -24,7 +24,7 @@ const PROJECTS = [
   "straussfritolayil","tevade","tevapl","tevaru","tnuvailv2","tuborgro","ulbe","ulde","ules",
   "unilevergr","ulit","unileverken","ulnl","ulpl","ulpt","unileverse","uluk","haleonfr",
   "beiersdorfes","beiersdorftr","mondelezkaza","pghr","pgza","schwartaude","florafoodsgr",
-  "odpernodricardza","odpernodricardtr"
+  "odpernodricardza","odpernodricardtr","odmdlzrusf"
 ];
 
 const METRICS = [
